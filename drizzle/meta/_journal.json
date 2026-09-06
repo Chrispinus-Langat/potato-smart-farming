@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1788688188778,
+      "tag": "0000_young_stryfe",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,3 +1,6 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
+import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -39,7 +42,8 @@ import {
   Wind,
   X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import CommunitySection from "./CommunitySection";
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard },
@@ -65,6 +69,13 @@ const diseases = [
 ];
 
 export default function Home() {
+  // The useAuth hook provides authentication state.
+  // To implement login/logout, call logout(), or start login from an event
+  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
+  // startLogin() during render (no href={startLogin()}) — it mints a one-time
+  // nonce cookie and must run only at the moment of navigation.
+  let { user, loading, error, isAuthenticated, logout } = useAuth();
+
   const [activeView, setActiveView] = useState("Overview");
   const [language, setLanguage] = useState("EN");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -79,6 +90,40 @@ export default function Home() {
     { id: 3, name: "Mary Wambui", handle: "@mary_farm", initials: "MW", tone: "bg-[#e6e0f1] text-[#765f9f]", time: "3 hr", text: "Does anyone have an organic approach for aphids? I’d love to compare what is working in different counties before I spray.", tags: ["#askfarmers"], likes: 12, comments: 14 },
   ]);
   const fileInput = useRef<HTMLInputElement>(null);
+  const communityQuery = trpc.community.list.useQuery({ limit: 30 }, { enabled: isAuthenticated });
+  const communityUtils = trpc.useUtils();
+  const createPostMutation = trpc.community.create.useMutation({
+    onSuccess: async () => {
+      setStory("");
+      notify("Your story is now live in the community.");
+      await communityUtils.community.list.invalidate();
+    },
+    onError: () => notify("We could not publish that story. Please try again."),
+  });
+  const likePostMutation = trpc.community.like.useMutation({
+    onSuccess: async () => {
+      await communityUtils.community.list.invalidate();
+    },
+    onError: () => notify("Please sign in to react to farmer stories."),
+  });
+
+  useEffect(() => {
+    if (!communityQuery.data) return;
+    const mapped = communityQuery.data.map((post) => ({
+      id: post.id,
+      name: post.authorName ?? "Mavuno farmer",
+      handle: "@farmer",
+      initials: (post.authorName ?? "MF").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(),
+      tone: "bg-[#e6f0c8] text-[#5d7442]",
+      time: new Date(post.createdAt).toLocaleDateString(),
+      text: post.body,
+      tags: [],
+      likes: post.likes,
+      comments: post.comments,
+    }));
+    setPosts(mapped);
+    setLikedPosts(communityQuery.data.filter((post) => post.isLiked).map((post) => post.id));
+  }, [communityQuery.data]);
 
   const notify = (message: string) => {
     setToast(message);
@@ -225,6 +270,7 @@ export default function Home() {
             </section>
 
             <section className="mt-9 overflow-hidden rounded-[23px] bg-[#f2e5d9] shadow-[0_10px_26px_rgba(123,83,48,0.06)]"><div className="grid lg:grid-cols-[1.15fr_0.85fr]"><div className="relative min-h-[205px] overflow-hidden p-6 sm:p-8"><div className="absolute inset-0 bg-gradient-to-r from-[#f2e5d9] via-[#f2e5d9]/90 to-[#f2e5d9]/10" /><div className="absolute inset-y-0 right-0 hidden w-[55%] sm:block bg-cover bg-center opacity-90 mix-blend-multiply" style={{ backgroundImage: "url('./potato-field.jpg')" }} /><div className="relative max-w-[420px] lg:max-w-[350px]"><div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#a3653e]"><BookOpen size={14} /> Mavuno field note · 01</div><h2 className="font-display text-[26px] font-semibold leading-tight tracking-[-0.04em] text-[#6d3f27]">Keep an eye on lower leaves this week.</h2><p className="mt-2 text-[12px] leading-relaxed text-[#956a51]">Wet weather can create the right conditions for late blight. Scout early and avoid watering leaves.</p><button onClick={() => notify("Field note opened.")} className="mt-5 flex items-center gap-1 text-[11px] font-extrabold text-[#a35c34]">Read the full note <ArrowUpRight size={14} /></button></div></div><div className="flex items-center justify-between gap-4 bg-[#e9d5c5] p-6 sm:p-8"><div><p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#a3755e]">Quick action</p><h3 className="mt-2 font-display text-[22px] font-semibold tracking-[-0.035em] text-[#74452e]">Log a field visit</h3><p className="mt-1 text-[11px] text-[#a47760]">Record what you see while scouting.</p></div><button onClick={() => notify("Field visit log opened.")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#a96540] text-white shadow-[0_8px_16px_rgba(130,79,44,0.2)] transition-all hover:bg-[#8d5132] active:scale-[0.96]"><Plus size={19} /></button></div></div></section>
+            <CommunitySection notify={notify} />
           </div>
         </main>
       </div>
