@@ -49,8 +49,10 @@ Review generated SQL before applying it to a production database.
 
 The typed API is defined in `server/routers.ts` and uses helpers in `server/db.ts`:
 
-- `farms` — farms, detailed farm views, fields, and task management
-- `diagnosis` — image upload, server-side vision analysis, and persistent diagnosis history
+- `farms` — farms, detailed farm views, field CRUD, planting dates, variety history, and task management
+- `diagnosis` — image upload, server-side vision analysis, persistent diagnosis history, and field links
+- `weather` — live five-day farm forecasts through Open-Meteo geocoding and forecast APIs
+- `reports` — authenticated PDF exports containing farm activity and diagnosis summaries
 - `community` — stories, likes, comments, farmer suggestions, and follows
 - `messaging` — conversations, message threads, and sending messages
 - `auth` — current session and logout
@@ -58,6 +60,8 @@ The typed API is defined in `server/routers.ts` and uses helpers in `server/db.t
 The frontend consumes these procedures through `client/src/lib/trpc.ts`; no separate REST client is required.
 
 Crop analysis accepts JPEG, PNG, and WebP images up to 8 MB, uploads them to object storage, calls the configured vision-capable model server-side, and saves the structured result. Model output is advisory; uncertain results are marked for expert review.
+
+Farm detail pages geocode the farm location through Open-Meteo and display live current conditions plus a five-day outlook. PDF reports are generated on the server with PDFKit and downloaded from the authenticated farm detail view.
 
 ## Repository customization
 

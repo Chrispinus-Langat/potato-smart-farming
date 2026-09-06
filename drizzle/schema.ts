@@ -53,6 +53,22 @@ export const fields = mysqlTable(
   (table) => ({ farmIdx: index("fields_farm_idx").on(table.farmId) }),
 );
 
+export const fieldHistory = mysqlTable(
+  "field_history",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    fieldId: int("fieldId").notNull().references(() => fields.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 160 }).notNull(),
+    variety: varchar("variety", { length: 80 }),
+    acreage: varchar("acreage", { length: 32 }),
+    plantedAt: timestamp("plantedAt"),
+    healthScore: int("healthScore").default(0).notNull(),
+    note: text("note"),
+    recordedAt: timestamp("recordedAt").defaultNow().notNull(),
+  },
+  (table) => ({ fieldRecordedIdx: index("field_history_field_recorded_idx").on(table.fieldId, table.recordedAt) }),
+);
+
 export const farmTasks = mysqlTable(
   "farm_tasks",
   {
@@ -179,6 +195,7 @@ export type InsertUser = typeof users.$inferInsert;
 export type Farm = typeof farms.$inferSelect;
 export type InsertFarm = typeof farms.$inferInsert;
 export type Field = typeof fields.$inferSelect;
+export type FieldHistory = typeof fieldHistory.$inferSelect;
 export type Diagnosis = typeof diagnoses.$inferSelect;
 export type CommunityPost = typeof communityPosts.$inferSelect;
 export type Message = typeof messages.$inferSelect;

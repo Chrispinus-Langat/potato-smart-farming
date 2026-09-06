@@ -11,6 +11,7 @@ import {
   farmTasks,
   farms,
   fields,
+  fieldHistory,
   messages,
   InsertFarm,
   InsertUser,
@@ -115,7 +116,41 @@ export async function createField(ownerId: number, input: { farmId: number; name
   const farm = await db.select({ id: farms.id }).from(farms).where(and(eq(farms.id, input.farmId), eq(farms.ownerId, ownerId))).limit(1);
   if (!farm[0]) throw new Error("Farm not found");
   const result = await db.insert(fields).values(input).$returningId();
-  return db.select().from(fields).where(eq(fields.id, result[0]!.id)).limit(1).then((rows) => rows[0]);
+  const created = await db.select().from(fields).where(eq(fields.id, result[0]!.id)).limit(1).then((rows) => rows[0]);
+  if (created) await db.insert(fieldHistory).values({ fieldId: created.id, name: created.name, variety: created.variety, acreage: created.acreage, plantedAt: created.plantedAt, healthScore: created.healthScore, note: "Field created" });
+  return created;
+}
+
+export async function updateField(ownerId: number, fieldId: number, input: { name: string; variety?: string; acreage?: string; plantedAt?: Date; healthScore?: number; note?: string }) {
+  const db = requireDb();
+  const existing = await db.select({ field: fields }).from(fields).innerJoin(farms, eq(fields.farmId, farms.id)).where(and(eq(fields.id, fieldId), eq(farms.ownerId, ownerId))).limit(1);
+  if (!existing[0]) throw new Error("Field not found");
+  await db.update(fields).set({ name: input.name, variety: input.variety, acreage: input.acreage, plantedAt: input.plantedAt, healthScore: input.healthScore ?? 0, updatedAt: new Date() }).where(eq(fields.id, fieldId));
+  const updated = await db.select().from(fields).where(eq(fields.id, fieldId)).limit(1).then((rows) => rows[0]);
+  if (updated) await db.insert(fieldHistory).values({ fieldId: updated.id, name: updated.name, variety: updated.variety, acreage: updated.acreage, plantedAt: updated.plantedAt, healthScore: updated.healthScore, note: input.note || "Field updated" });
+  return updated;
+}
+
+export async function deleteField(ownerId: number, fieldId: number) {
+  const db = requireDb();
+  const existing = await db.select({ id: fields.id }).from(fields).innerJoin(farms, eq(fields.farmId, farms.id)).where(and(eq(fields.id, fieldId), eq(farms.ownerId, ownerId))).limit(1);
+  if (!existing[0]) throw new Error("Field not found");
+  await db.delete(fields).where(eq(fields.id, fieldId));
+  return { success: true } as const;
+}
+
+export async function listFieldHistory(ownerId: number, fieldId: number) {
+  const db = requireDb();
+  const owned = await db.select({ id: fields.id }).from(fields).innerJoin(farms, eq(fields.farmId, farms.id)).where(and(eq(fields.id, fieldId), eq(farms.ownerId, ownerId))).limit(1);
+  if (!owned[0]) throw new Error("Field not found");
+  return db.select().from(fieldHistory).where(eq(fieldHistory.fieldId, fieldId)).orderBy(desc(fieldHistory.recordedAt));
+}
+
+export async function listFieldDiagnoses(ownerId: number, fieldId: number) {
+  const db = requireDb();
+  const owned = await db.select({ id: fields.id }).from(fields).innerJoin(farms, eq(fields.farmId, farms.id)).where(and(eq(fields.id, fieldId), eq(farms.ownerId, ownerId))).limit(1);
+  if (!owned[0]) throw new Error("Field not found");
+  return db.select().from(diagnoses).where(and(eq(diagnoses.ownerId, ownerId), eq(diagnoses.fieldId, fieldId))).orderBy(desc(diagnoses.createdAt));
 }
 
 export async function listTasks(ownerId: number) {
@@ -145,6 +180,14 @@ export async function saveDiagnosis(ownerId: number, input: {
   confidence: number; symptoms?: string; organicTreatment?: string; chemicalTreatment?: string; estimatedCost?: string;
 }) {
   const db = requireDb();
+  if (input.farmId) {
+    const farm = await db.select({ id: farms.id }).from(farms).where(and(eq(farms.id, input.farmId), eq(farms.ownerId, ownerId))).limit(1);
+    if (!farm[0]) throw new Error("Farm not found");
+  }
+  if (input.fieldId) {
+    const field = await db.select({ id: fields.id, farmId: fields.farmId }).from(fields).innerJoin(farms, eq(fields.farmId, farms.id)).where(and(eq(fields.id, input.fieldId), eq(farms.ownerId, ownerId))).limit(1);
+    if (!field[0] || (input.farmId && field[0].farmId !== input.farmId)) throw new Error("Field does not belong to this farm");
+  }
   const result = await db.insert(diagnoses).values({ ...input, ownerId }).$returningId();
   return db.select().from(diagnoses).where(eq(diagnoses.id, result[0]!.id)).limit(1).then((rows) => rows[0]);
 }

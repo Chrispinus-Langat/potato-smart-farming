@@ -35,4 +35,15 @@ describe("protected product procedures", () => {
     const caller = appRouter.createCaller(unauthenticatedContext());
     await expect(caller.farms.details({ farmId: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
+
+  it("requires authentication before changing a field", async () => {
+    const caller = appRouter.createCaller(unauthenticatedContext());
+    await expect(caller.farms.updateField({ id: 1, name: "North field", healthScore: 80 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("requires authentication before loading weather or exporting a report", async () => {
+    const caller = appRouter.createCaller(unauthenticatedContext());
+    await expect(caller.weather.forFarm({ farmId: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.reports.farmPdf({ farmId: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
 });
