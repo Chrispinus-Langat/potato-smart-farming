@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import CommunitySection from "./CommunitySection";
+import WorkspaceViews from "./WorkspaceViews";
 
 const navItems = [
   { label: "Overview", icon: LayoutDashboard },
@@ -130,6 +131,20 @@ export default function Home() {
     window.setTimeout(() => setToast(""), 2600);
   };
 
+  const openView = (view: string) => {
+    setActiveView(view);
+    setMenuOpen(false);
+    window.setTimeout(() => {
+      if (view === "Overview") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (view === "Community") {
+        document.getElementById("community")?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        document.getElementById("workspace-panel")?.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 0);
+  };
+
   const chooseFile = (file?: File) => {
     if (!file) return;
     setSelectedFile(file.name);
@@ -158,14 +173,7 @@ export default function Home() {
               return (
                 <button
                   key={item.label}
-                  onClick={() => {
-                    setActiveView(item.label);
-                    if (item.label === "Community") {
-                      document.getElementById("community")?.scrollIntoView({ behavior: "smooth" });
-                    } else if (item.label !== "Overview") {
-                      notify(`${item.label} is ready for the next build.`);
-                    }
-                  }}
+                  onClick={() => openView(item.label)}
                   className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[13px] font-semibold transition-all duration-200 active:scale-[0.98] ${selected ? "bg-[#e6f1df] text-[#1d6847] shadow-[inset_3px_0_0_#397654]" : "text-[#708076] hover:bg-[#f0f4ed] hover:text-[#1d6847]"}`}
                 >
                   <Icon size={17} strokeWidth={selected ? 2.3 : 1.9} />
@@ -270,14 +278,15 @@ export default function Home() {
             </section>
 
             <section className="mt-9 overflow-hidden rounded-[23px] bg-[#f2e5d9] shadow-[0_10px_26px_rgba(123,83,48,0.06)]"><div className="grid lg:grid-cols-[1.15fr_0.85fr]"><div className="relative min-h-[205px] overflow-hidden p-6 sm:p-8"><div className="absolute inset-0 bg-gradient-to-r from-[#f2e5d9] via-[#f2e5d9]/90 to-[#f2e5d9]/10" /><div className="absolute inset-y-0 right-0 hidden w-[55%] sm:block bg-cover bg-center opacity-90 mix-blend-multiply" style={{ backgroundImage: "url('./potato-field.jpg')" }} /><div className="relative max-w-[420px] lg:max-w-[350px]"><div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-[#a3653e]"><BookOpen size={14} /> Mavuno field note · 01</div><h2 className="font-display text-[26px] font-semibold leading-tight tracking-[-0.04em] text-[#6d3f27]">Keep an eye on lower leaves this week.</h2><p className="mt-2 text-[12px] leading-relaxed text-[#956a51]">Wet weather can create the right conditions for late blight. Scout early and avoid watering leaves.</p><button onClick={() => notify("Field note opened.")} className="mt-5 flex items-center gap-1 text-[11px] font-extrabold text-[#a35c34]">Read the full note <ArrowUpRight size={14} /></button></div></div><div className="flex items-center justify-between gap-4 bg-[#e9d5c5] p-6 sm:p-8"><div><p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#a3755e]">Quick action</p><h3 className="mt-2 font-display text-[22px] font-semibold tracking-[-0.035em] text-[#74452e]">Log a field visit</h3><p className="mt-1 text-[11px] text-[#a47760]">Record what you see while scouting.</p></div><button onClick={() => notify("Field visit log opened.")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#a96540] text-white shadow-[0_8px_16px_rgba(130,79,44,0.2)] transition-all hover:bg-[#8d5132] active:scale-[0.96]"><Plus size={19} /></button></div></div></section>
+            <WorkspaceViews activeView={activeView} notify={notify} />
             <CommunitySection notify={notify} />
           </div>
         </main>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#e0e7dc] bg-[#fbfcf8]/95 px-2 py-2 backdrop-blur-xl lg:hidden"><div className="mx-auto flex max-w-md items-center justify-around"><button onClick={() => setActiveView("Overview")} className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[9px] font-bold ${activeView === "Overview" ? "text-[#2d704b]" : "text-[#95a196]"}`}><LayoutDashboard size={18} /> Home</button><button onClick={() => { setActiveView("Diagnose crop"); fileInput.current?.click(); }} className="-mt-6 flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-full border-4 border-[#f5f6f0] bg-[#153d2c] text-[9px] font-bold text-[#d8ec75] shadow-[0_7px_18px_rgba(21,61,44,0.23)]"><ScanLine size={19} /> Scan</button><button onClick={() => setActiveView("Tasks")} className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[9px] font-bold ${activeView === "Tasks" ? "text-[#2d704b]" : "text-[#95a196]"}`}><ListTodo size={18} /> Tasks</button></div></div>
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#e0e7dc] bg-[#fbfcf8]/95 px-2 py-2 backdrop-blur-xl lg:hidden"><div className="mx-auto flex max-w-md items-center justify-around"><button onClick={() => openView("Overview")} className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[9px] font-bold ${activeView === "Overview" ? "text-[#2d704b]" : "text-[#95a196]"}`}><LayoutDashboard size={18} /> Home</button><button onClick={() => { openView("Diagnose crop"); window.setTimeout(() => document.getElementById("workspace-panel")?.scrollIntoView({ behavior: "smooth" }), 0); }} className="-mt-6 flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-full border-4 border-[#f5f6f0] bg-[#153d2c] text-[9px] font-bold text-[#d8ec75] shadow-[0_7px_18px_rgba(21,61,44,0.23)]"><ScanLine size={19} /> Scan</button><button onClick={() => openView("Tasks")} className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[9px] font-bold ${activeView === "Tasks" ? "text-[#2d704b]" : "text-[#95a196]"}`}><ListTodo size={18} /> Tasks</button></div></div>
 
-      {menuOpen && <div className="fixed inset-0 z-40 lg:hidden"><button className="absolute inset-0 bg-[#153d2c]/30 backdrop-blur-sm" onClick={() => setMenuOpen(false)} aria-label="Close menu" /><aside className="absolute left-0 top-0 flex h-full w-[280px] flex-col bg-[#fbfcf8] p-5 shadow-2xl"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[#153d2c] text-[#dff38c]"><Leaf size={21} /></div><p className="font-display text-[19px] font-semibold text-[#153d2c]">Mavuno</p></div><button onClick={() => setMenuOpen(false)} className="rounded-xl p-2 text-[#7d8e81]"><X size={19} /></button></div><nav className="mt-10 space-y-1.5">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} onClick={() => { setActiveView(item.label); setMenuOpen(false); if (item.label === "Community") window.setTimeout(() => document.getElementById("community")?.scrollIntoView({ behavior: "smooth" }), 0); }} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[13px] font-semibold ${activeView === item.label ? "bg-[#e6f1df] text-[#1d6847]" : "text-[#708076]"}`}><Icon size={17} />{item.label}</button>; })}</nav></aside></div>}
+      {menuOpen && <div className="fixed inset-0 z-40 lg:hidden"><button className="absolute inset-0 bg-[#153d2c]/30 backdrop-blur-sm" onClick={() => setMenuOpen(false)} aria-label="Close menu" /><aside className="absolute left-0 top-0 flex h-full w-[280px] flex-col bg-[#fbfcf8] p-5 shadow-2xl"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-[#153d2c] text-[#dff38c]"><Leaf size={21} /></div><p className="font-display text-[19px] font-semibold text-[#153d2c]">Mavuno</p></div><button onClick={() => setMenuOpen(false)} className="rounded-xl p-2 text-[#7d8e81]"><X size={19} /></button></div><nav className="mt-10 space-y-1.5">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} onClick={() => openView(item.label)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[13px] font-semibold ${activeView === item.label ? "bg-[#e6f1df] text-[#1d6847]" : "text-[#708076]"}`}><Icon size={17} />{item.label}</button>; })}</nav></aside></div>}
 
       {messagesOpen && <div className="fixed inset-0 z-50"><button className="absolute inset-0 bg-[#153d2c]/25 backdrop-blur-sm" onClick={() => setMessagesOpen(false)} aria-label="Close messages" /><aside className="absolute right-0 top-0 flex h-full w-full max-w-[390px] flex-col bg-[#fbfcf8] shadow-2xl"><div className="flex items-center justify-between border-b border-[#e6ebe2] px-5 py-5"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#9ba79a]">Private conversations</p><h3 className="mt-1 font-display text-[25px] font-semibold tracking-[-0.04em] text-[#214633]">Messages</h3></div><button onClick={() => setMessagesOpen(false)} className="rounded-xl p-2 text-[#7d8e81] hover:bg-[#edf2e9]"><X size={19} /></button></div><div className="border-b border-[#e6ebe2] px-5 py-4"><div className="flex items-center gap-2 rounded-xl bg-[#f0f5ed] px-3 py-2.5 text-[#8d9b90]"><Search size={15} /><input placeholder="Search conversations" className="w-full bg-transparent text-[12px] outline-none placeholder:text-[#a2aea4]" /></div></div><div className="divide-y divide-[#edf0ea]">{[{ initials: "EK", name: "Esther Kamau", message: "That organic spray worked well...", time: "10m", tone: "bg-[#f1e4c8] text-[#8f7042]", unread: true }, { initials: "DO", name: "David Otieno", message: "Are you planting Shangi this season?", time: "1h", tone: "bg-[#d9e8e8] text-[#4d7b7b]", unread: true }, { initials: "LN", name: "Lucy Njeri", message: "Thanks for sharing the field note.", time: "Yesterday", tone: "bg-[#e8dceb] text-[#795e8e]", unread: false }].map((chat) => <button key={chat.name} onClick={() => notify(`Opening chat with ${chat.name}.`)} className="flex w-full items-center gap-3 px-5 py-4 text-left hover:bg-[#f5f8f2]"><div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${chat.tone}`}>{chat.initials}</div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><p className="text-[12px] font-bold text-[#405849]">{chat.name}</p><span className="text-[10px] text-[#a0aca1]">{chat.time}</span></div><p className="mt-1 truncate text-[11px] text-[#8b998e]">{chat.message}</p></div>{chat.unread && <span className="h-2 w-2 rounded-full bg-[#df8754]" />}</button>)}</div><div className="mt-auto border-t border-[#e6ebe2] p-5"><button onClick={() => notify("New conversation composer will be connected next.")} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#153d2c] px-4 py-3 text-[12px] font-bold text-white hover:bg-[#245d43]"><PenLine size={15} /> New message</button></div></aside></div>}
 
