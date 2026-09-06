@@ -207,6 +207,8 @@ const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(
 
 export default defineConfig({
   plugins,
+  // GitHub Pages serves this project from /potato-smart-farming/ rather than /
+  base: process.env.GITHUB_ACTIONS ? "/potato-smart-farming/" : "/",
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
