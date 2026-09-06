@@ -25,4 +25,14 @@ describe("protected product procedures", () => {
     const caller = appRouter.createCaller(unauthenticatedContext());
     await expect(caller.messaging.conversations()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
+
+  it("requires authentication before analyzing a crop image", async () => {
+    const caller = appRouter.createCaller(unauthenticatedContext());
+    await expect(caller.diagnosis.analyze({ fileName: "leaf.jpg", mimeType: "image/jpeg", dataBase64: "a".repeat(120) })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("requires authentication before opening farm details", async () => {
+    const caller = appRouter.createCaller(unauthenticatedContext());
+    await expect(caller.farms.details({ farmId: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
 });

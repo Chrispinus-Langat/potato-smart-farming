@@ -91,6 +91,16 @@ export async function createFarm(ownerId: number, input: Omit<InsertFarm, "owner
   return db.select().from(farms).where(eq(farms.id, result[0]!.id)).limit(1).then((rows) => rows[0]);
 }
 
+export async function getFarmDetails(ownerId: number, farmId: number) {
+  const db = requireDb();
+  const farm = await db.select().from(farms).where(and(eq(farms.id, farmId), eq(farms.ownerId, ownerId))).limit(1);
+  if (!farm[0]) throw new Error("Farm not found");
+  const farmFields = await db.select().from(fields).where(eq(fields.farmId, farmId)).orderBy(desc(fields.createdAt));
+  const farmTaskRows = await db.select().from(farmTasks).where(and(eq(farmTasks.ownerId, ownerId), eq(farmTasks.farmId, farmId))).orderBy(asc(farmTasks.completed), asc(farmTasks.dueAt));
+  const farmDiagnosisRows = await db.select().from(diagnoses).where(and(eq(diagnoses.ownerId, ownerId), eq(diagnoses.farmId, farmId))).orderBy(desc(diagnoses.createdAt));
+  return { farm: farm[0], fields: farmFields, tasks: farmTaskRows, diagnoses: farmDiagnosisRows };
+}
+
 export async function listFields(ownerId: number) {
   const db = requireDb();
   return db.select({ field: fields, farmName: farms.name })

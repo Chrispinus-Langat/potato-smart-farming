@@ -49,13 +49,15 @@ Review generated SQL before applying it to a production database.
 
 The typed API is defined in `server/routers.ts` and uses helpers in `server/db.ts`:
 
-- `farms` — farms, fields, and task management
-- `diagnosis` — persistent diagnosis history
+- `farms` — farms, detailed farm views, fields, and task management
+- `diagnosis` — image upload, server-side vision analysis, and persistent diagnosis history
 - `community` — stories, likes, comments, farmer suggestions, and follows
 - `messaging` — conversations, message threads, and sending messages
 - `auth` — current session and logout
 
 The frontend consumes these procedures through `client/src/lib/trpc.ts`; no separate REST client is required.
+
+Crop analysis accepts JPEG, PNG, and WebP images up to 8 MB, uploads them to object storage, calls the configured vision-capable model server-side, and saves the structured result. Model output is advisory; uncertain results are marked for expert review.
 
 ## Repository customization
 
