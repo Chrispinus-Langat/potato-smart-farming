@@ -70,4 +70,27 @@ pnpm build
 pnpm start
 ```
 
-Set the deployed frontend origin and OAuth callback URL to the public Node server URL. If the frontend is hosted separately, configure the API gateway/proxy so browser requests to `/api/trpc` and `/api/oauth` reach the Node server.
+The server exposes `GET /api/health` for hosting-provider health checks.
+
+## Docker deployment
+
+The repository includes a production `Dockerfile` and `.dockerignore`:
+
+```bash
+docker build -t mavuno-potato-care .
+docker run --env-file .env -p 3000:3000 mavuno-potato-care
+```
+
+Do not commit the `.env` file. Configure the variables listed above in the hosting provider's secret/environment settings.
+
+## Render-style deployment
+
+`render.yaml` defines a Docker web service and maps its health check to `/api/health`. To deploy, create a new Blueprint from this repository, provide the environment values in the provider dashboard, and deploy. The database can be a managed MySQL/TiDB instance from the same provider or another database provider.
+
+Set the OAuth application's callback URL to:
+
+```text
+https://YOUR_BACKEND_DOMAIN/api/oauth/callback
+```
+
+Set `VITE_OAUTH_PORTAL_URL`, `OAUTH_SERVER_URL`, and `VITE_APP_ID` to values from the OAuth provider you choose. If the frontend is hosted separately, configure the API gateway/proxy so browser requests to `/api/trpc`, `/api/oauth`, and `/api/health` reach the Node server. For the simplest deployment, serve the built frontend and API from the same Node domain.

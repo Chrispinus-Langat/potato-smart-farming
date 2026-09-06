@@ -1,0 +1,12 @@
+node_modules
+.pnpm-store
+dist
+.git
+.github
+.env
+.env.*
+!.env.example
+.manus-logs
+coverage
+screenshots
+terminal_full_output
